@@ -32,19 +32,26 @@ swapoff -a
 systemctl stop firewalld
 systemctl disable firewalld
 
+## install docker
+dnf install -y docker
+systemctl enable docker
+systemctl start docker
+docker --version
+
+# install kubelet
+dnf install -y kubernetes-kubelet
+systemctl enable kubelet.service
+systemctl start kubelet.service
+
+## cni
+mkdir -p /opt/cni/bin
+cp /usr/libexec/cni/* /opt/cni/bin/
+
 if [[ $hostname == "master" ]]; then
-    # install docker
-    dnf install -y docker
-    systemctl enable docker
-    systemctl start docker
-    docker --version
     # install kubeadm
     dnf install -y kubernetes-kubeadm
     kubeadm_version=`kubeadm version -o short`
-    # install kubelet
-    dnf install -y kubernetes-kubelet
-    systemctl enable kubelet.service
-    systemctl start kubelet.service
+
     # install kubernetes master
     dnf install -y kubernetes-master
     # install conntrack
@@ -52,13 +59,22 @@ if [[ $hostname == "master" ]]; then
     # kubeadm init 
     kubeadm reset
     kubeadm init \
-        --apiserver-advertise-address=192.168.123.208 \
+        --apiserver-advertise-address=$ip \
         --image-repository registry.aliyuncs.com/google_containers \
         --kubernetes-version $kubeadm_version \
         --service-cidr=10.1.0.0/16 \
         --pod-network-cidr=10.244.0.0/16
-else
-    # pass
-    echo "pass"
+    
+    admin_config=`cat /etc/profile | grep KUBECONFIG`
+    if [[ $admin_config == "" ]]; then
+        echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> /etc/profile
+    fi
+    chmod 777 /etc/kubernetes/admin.conf
+    # container network
+    dnf install -y containernetworking-plugins
+    kubectl apply -f ./kube-flannel.yaml
 fi
 
+
+## reference
+## https://www.cnblogs.com/ranger-zzz/p/17014433.html
