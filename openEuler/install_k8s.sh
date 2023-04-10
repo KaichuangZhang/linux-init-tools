@@ -43,19 +43,22 @@ dnf install -y kubernetes-kubelet
 systemctl enable kubelet.service
 systemctl start kubelet.service
 
+# install kubeadm
+dnf install -y kubernetes-kubeadm
+kubeadm_version=`kubeadm version -o short`
+
 ## cni
+dnf install -y containernetworking-plugins
 mkdir -p /opt/cni/bin
 cp /usr/libexec/cni/* /opt/cni/bin/
 
-if [[ $hostname == "master" ]]; then
-    # install kubeadm
-    dnf install -y kubernetes-kubeadm
-    kubeadm_version=`kubeadm version -o short`
+# install conntrack
+dnf install -y conntrack
 
+if [[ $hostname == "master" ]]; then
     # install kubernetes master
     dnf install -y kubernetes-master
-    # install conntrack
-    dnf install -y conntrack
+
     # kubeadm init 
     kubeadm reset
     kubeadm init \
@@ -71,8 +74,11 @@ if [[ $hostname == "master" ]]; then
     fi
     chmod 777 /etc/kubernetes/admin.conf
     # container network
-    dnf install -y containernetworking-plugins
     kubectl apply -f ./kube-flannel.yaml
+else
+    kubeadm reset
+    # instasll k8s node
+    dnf install -y kubernetes-node
 fi
 
 

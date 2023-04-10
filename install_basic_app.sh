@@ -2,7 +2,7 @@
 release_version=`cat /etc/os-release | grep "^ID=" | awk -F "=" '{print $2}'`
 echo "release version:$release_version"
 cp ./basic/.vimrc ~/.vimrc
-if [[ $release_version -eq "openEuler" ]];
+if [[ $release_version == "\"openEuler\"" ]];
 then
     dnf -y install vim
 
