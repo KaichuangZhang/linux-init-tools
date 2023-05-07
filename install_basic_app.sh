@@ -5,5 +5,7 @@ cp ./basic/.vimrc ~/.vimrc
 if [[ $release_version == "\"openEuler\"" ]];
 then
     dnf -y install vim
-
+elif [[ $release_version == "ubuntu" ]];
+then
+    apt -y install vim
 fi
